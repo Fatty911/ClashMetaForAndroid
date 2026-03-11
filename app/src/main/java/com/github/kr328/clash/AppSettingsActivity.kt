@@ -1,16 +1,17 @@
 package com.github.kr328.clash
 
 import android.app.AlertDialog
+import android.app.ProgressDialog
 import android.content.ComponentName
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import com.github.kr328.clash.common.util.componentName
 import com.github.kr328.clash.design.AppSettingsDesign
 import com.github.kr328.clash.design.R
 import com.github.kr328.clash.design.model.Behavior
 import com.github.kr328.clash.service.store.ServiceStore
+import com.github.kr328.clash.util.ApkInstaller
 import com.github.kr328.clash.util.ApplicationObserver
+import com.github.kr328.clash.util.DownloadState
 import com.github.kr328.clash.util.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
@@ -55,7 +56,6 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
             val status = packageManager.getComponentEnabledSetting(
                 RestartReceiver::class.componentName
             )
-
             return status == PackageManager.COMPONENT_ENABLED_STATE_ENABLED
         }
         set(value) {
@@ -94,8 +94,8 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
                             AlertDialog.Builder(this@AppSettingsActivity)
                                 .setTitle(getString(R.string.update_available))
                                 .setMessage(getString(R.string.update_available_message, releaseInfo.versionName))
-                                .setPositiveButton(getString(R.string.download)) { _, _ ->
-                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(releaseInfo.downloadUrl)))
+                                .setPositiveButton(getString(R.string.download_and_install)) { _, _ ->
+                                    startDownloadAndInstall(releaseInfo.downloadUrl, "cmfa-${releaseInfo.versionName}.apk")
                                 }
                                 .setNegativeButton(android.R.string.cancel, null)
                                 .show()
@@ -116,6 +116,44 @@ class AppSettingsActivity : BaseActivity<AppSettingsDesign>(), Behavior {
                     }
                 )
             }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun startDownloadAndInstall(url: String, fileName: String) {
+        val progressDialog = ProgressDialog(this@AppSettingsActivity).apply {
+            setTitle(getString(R.string.downloading_update))
+            setMessage(getString(R.string.downloading_please_wait))
+            setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+            isIndeterminate = false
+            max = 100
+            setCancelable(false)
+            show()
+        }
+
+        launch {
+            ApkInstaller.downloadApk(this@AppSettingsActivity, url, fileName)
+                .collect { state ->
+                    withContext(Dispatchers.Main) {
+                        when (state) {
+                            is DownloadState.Progress -> {
+                                progressDialog.progress = state.percent
+                            }
+                            is DownloadState.Success -> {
+                                progressDialog.dismiss()
+                                ApkInstaller.installApk(this@AppSettingsActivity, state.file)
+                            }
+                            is DownloadState.Failed -> {
+                                progressDialog.dismiss()
+                                AlertDialog.Builder(this@AppSettingsActivity)
+                                    .setTitle(getString(R.string.download_failed))
+                                    .setMessage(state.reason)
+                                    .setPositiveButton(android.R.string.ok, null)
+                                    .show()
+                            }
+                        }
+                    }
+                }
         }
     }
 }

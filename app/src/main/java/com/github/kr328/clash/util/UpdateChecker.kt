@@ -2,6 +2,7 @@ package com.github.kr328.clash.util
 
 import android.content.Context
 import android.content.pm.PackageManager
+import com.github.kr328.clash.BuildConfig
 import com.github.kr328.clash.common.log.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,7 +20,8 @@ data class ReleaseInfo(
 )
 
 object UpdateChecker {
-    private const val GITHUB_API_URL = "https://api.github.com/repos/MetaCubeX/ClashMetaForAndroid/releases/latest"
+    private val GITHUB_API_URL: String
+        get() = "https://api.github.com/repos/${BuildConfig.GITHUB_REPO}/releases/latest"
     private const val TAG = "UpdateChecker"
 
     suspend fun checkForUpdate(context: Context): Result<ReleaseInfo?> = withContext(Dispatchers.IO) {
@@ -47,15 +49,26 @@ object UpdateChecker {
             
             val assets = json.getJSONArray("assets")
             var downloadUrl = ""
+
+            // prefer universal apk, then meta, then any apk
             for (i in 0 until assets.length()) {
                 val asset = assets.getJSONObject(i)
                 val name = asset.getString("name")
-                if (name.endsWith(".apk") && name.contains("meta")) {
+                if (name.endsWith(".apk") && name.contains("universal", ignoreCase = true)) {
                     downloadUrl = asset.getString("browser_download_url")
                     break
                 }
             }
-            
+            if (downloadUrl.isEmpty()) {
+                for (i in 0 until assets.length()) {
+                    val asset = assets.getJSONObject(i)
+                    val name = asset.getString("name")
+                    if (name.endsWith(".apk") && name.contains("meta", ignoreCase = true)) {
+                        downloadUrl = asset.getString("browser_download_url")
+                        break
+                    }
+                }
+            }
             if (downloadUrl.isEmpty()) {
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
@@ -66,10 +79,10 @@ object UpdateChecker {
                     }
                 }
             }
-            
+
             val versionCode = parseVersionCode(versionName)
-            
-            Log.d("$TAG: Current version code: $currentVersionCode, Latest version code: $versionCode")
+
+            Log.d("$TAG: repo=${BuildConfig.GITHUB_REPO} current=$currentVersionCode latest=$versionCode")
             
             if (versionCode > currentVersionCode) {
                 Result.success(ReleaseInfo(

@@ -273,10 +273,14 @@
     <string name="check_for_updates">检查更新</string>
     <string name="check_for_updates_summary">从 GitHub 检查最新版本</string>
     <string name="update_available">有新版本</string>
-    <string name="update_available_message">发现新版本 %s，是否下载？</string>
+    <string name="update_available_message">发现新版本 %s，是否下载并安装？</string>
     <string name="no_update_available">无新版本</string>
     <string name="already_latest_version">您已在使用最新版本。</string>
     <string name="check_update_failed">检查更新失败</string>
     <string name="unknown_error">未知错误</string>
     <string name="download">下载</string>
+    <string name="download_and_install">下载并安装</string>
+    <string name="downloading_update">正在下载更新</string>
+    <string name="downloading_please_wait">请稍候，正在下载更新…</string>
+    <string name="download_failed">下载失败</string>
 </resources>

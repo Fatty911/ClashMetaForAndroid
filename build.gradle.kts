@@ -64,6 +64,13 @@ subprojects {
             resValue("string", "release_name", "v$versionName")
             resValue("integer", "release_code", "$versionCode")
 
+            if (isApp) {
+                val githubRepo = System.getenv("GITHUB_REPOSITORY")
+                    ?: (queryConfigProperty("github.repository") as? String)
+                    ?: "MetaCubeX/ClashMetaForAndroid"
+                buildConfigField("String", "GITHUB_REPO", "\"$githubRepo\"")
+            }
+
             ndk {
                 abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
             }
