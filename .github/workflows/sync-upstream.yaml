@@ -1,0 +1,64 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+
+      - name: Add Upstream Remote
+        run: |
+          git remote add upstream https://github.com/MetaCubeX/ClashMetaForAndroid.git
+          git fetch upstream
+
+      - name: Sync with Upstream
+        run: |
+          git checkout main
+          git merge upstream/main --no-edit
+
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          if git diff --quiet HEAD@{1} HEAD; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push Changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync Submodules
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git submodule update --init --recursive --remote
+
+      - name: Create PR if Conflicts
+        if: failure()
+        run: |
+          git checkout -b sync-upstream-$(date +%Y%m%d-%H%M%S)
+          git push origin $(git branch --show-current)
+          gh pr create \
+            --title "Sync Upstream $(date +%Y-%m-%d)" \
+            --body "Automated sync from upstream MetaCubeX/ClashMetaForAndroid. Please resolve conflicts manually." \
+            --base main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

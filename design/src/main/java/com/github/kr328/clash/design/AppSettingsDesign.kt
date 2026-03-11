@@ -20,6 +20,7 @@ class AppSettingsDesign(
     behavior: Behavior,
     running: Boolean,
     onHideIconChange: (hide: Boolean) -> Unit,
+    onCheckUpdate: () -> Unit,
 ) : Design<AppSettingsDesign.Request>(context) {
     enum class Request {
         ReCreateAllActivities
@@ -97,6 +98,18 @@ class AppSettingsDesign(
                 summary = R.string.show_traffic_summary
             ) {
                 enabled = !running
+            }
+
+            category(R.string.about)
+
+            clickable(
+                title = R.string.check_for_updates,
+                icon = R.drawable.ic_baseline_cloud_download,
+                summary = R.string.check_for_updates_summary
+            ) {
+                clicked {
+                    onCheckUpdate()
+                }
             }
         }
 

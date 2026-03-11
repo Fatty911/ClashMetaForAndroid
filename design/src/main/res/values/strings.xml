@@ -357,4 +357,14 @@
     <string name="shortcut_start_long">Start Clash service</string>
     <string name="shortcut_stop_short">Stop Clash</string>
     <string name="shortcut_stop_long">Stop Clash service</string>
+
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="check_for_updates_summary">Check for latest version on GitHub</string>
+    <string name="update_available">Update Available</string>
+    <string name="update_available_message">Version %s is available. Do you want to download it?</string>
+    <string name="no_update_available">No Update Available</string>
+    <string name="already_latest_version">You are already using the latest version.</string>
+    <string name="check_update_failed">Check Update Failed</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="download">Download</string>
 </resources>
